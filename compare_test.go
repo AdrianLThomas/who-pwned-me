@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/rand"
+	"slices"
 	"testing"
 )
 
@@ -18,8 +19,7 @@ func generateHIBPTestData(size int) []string {
 		hash := hex.EncodeToString(rawHash.Sum(nil)) + ":" + fmt.Sprint(countPrefix)
 		testData[i] = hash
 	}
-
-	// TODO sort test data
+	slices.Sort(testData)
 
 	return testData
 }
