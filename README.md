@@ -41,7 +41,6 @@ Full format has been omitted for brevity.
 I don't want to have my passwords laying around in plain text. So I'll converted them all to SHA1, and this program will work with the below format:
 ```json
 {
-    "version": 0.1,
     "passwords": [
         {
             "name": "example.com",
