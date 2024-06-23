@@ -1,10 +1,20 @@
 package compare
 
 import (
+	"math/rand"
 	"testing"
 )
 
-func getHIBPTestData() []string {
+func getHIBPTestData(size int) []string {
+	for i := 0; i < size; i++ {
+		numberOfHashesFound := rand.Intn(10000) + 1
+		/*
+			TODO
+			create an ordered range of hashes and return it based on the arg.
+		*/
+
+	}
+
 	return []string{
 		"01B307ACBA4F54F55AAFC33BB06BBBF6CA803E9A:100",
 		"5BAA61E4C9B93F3F0682250B6CF8331B7EE68FD8:20",
@@ -13,7 +23,7 @@ func getHIBPTestData() []string {
 	}
 }
 
-func getWPMTestData() []PasswordItem {
+func getWPMTestData(size int) []PasswordItem {
 	return []PasswordItem{
 		{"example.com", "adrian", "64A6DA114D17AE8F167F6BE2C4AEBC9E99F7466C"},
 	}
@@ -43,11 +53,26 @@ func TestCompare(t *testing.T) {
 	}
 }
 
-func BenchmarkCompare(b *testing.B) {
-	HIBP := getHIBPTestData()
-	WPM := getWPMTestData()
+var testCaseSizes = []struct {
+	hibpSize int
+	wpmSize  int
+}{
+	{hibpSize: 10, wpmSize: 1000},
+	{hibpSize: 100, wpmSize: 1000},
+	// {hibpSize: 1000, wpmSize: 1000},
+	// {hibpSize: 10000, wpmSize: 1000},
+	// {hibpSize: 100000, wpmSize: 1000},
+	// {hibpSize: 1000000, wpmSize: 1000},
+	// {hibpSize: 10000000, wpmSize: 1000},
+}
 
-	for i := 0; i < b.N; i++ {
-		Compare(HIBP, WPM)
+func BenchmarkCompare(b *testing.B) {
+	for _, testCaseSize := range testCaseSizes {
+		HIBP := getHIBPTestData(testCaseSize.hibpSize)
+		WPM := getWPMTestData(testCaseSize.wpmSize)
+
+		for i := 0; i < b.N; i++ {
+			Compare(HIBP, WPM)
+		}
 	}
 }
