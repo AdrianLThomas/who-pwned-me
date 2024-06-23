@@ -1,2 +1,4 @@
 - Script/Tool to convert Bitwarden passwords to wpm format
 - The main tool: Take hibp file, are there any matches to wpm?
+    - The hibp file is huge (40gb?), it doesn't make sense to go through everything for a few hundred passwords
+    - As the hibp file is ordered already, we could do a simple binary search to find the items we're interested in
