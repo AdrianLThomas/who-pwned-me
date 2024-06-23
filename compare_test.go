@@ -1,38 +1,51 @@
 package compare
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
+	"fmt"
 	"math/rand"
 	"testing"
 )
 
-func getHIBPTestData(size int) []string {
-	for i := 0; i < size; i++ {
-		numberOfHashesFound := rand.Intn(10000) + 1
-		/*
-			TODO
-			create an ordered range of hashes and return it based on the arg.
-		*/
+func generateHIBPTestData(size int) []string {
+	testData := make([]string, size)
 
+	for i := 0; i < size; i++ {
+		countPrefix := rand.Intn(10000) + 1
+		rawHash := sha1.New()
+		rawHash.Write([]byte(fmt.Sprint(i)))
+		hash := hex.EncodeToString(rawHash.Sum(nil)) + ":" + fmt.Sprint(countPrefix)
+		testData[i] = hash
 	}
 
-	return []string{
+	// TODO sort test data
+
+	return testData
+}
+
+func generateWPMTestData(size int) []PasswordItem {
+	testData := make([]PasswordItem, size)
+	for i := 0; i < size; i++ {
+		rawHash := sha1.New()
+		rawHash.Write([]byte(fmt.Sprint(i * i)))
+		testData[i] = PasswordItem{"example.com" + fmt.Sprint(i), "adrian " + fmt.Sprint(i), hex.EncodeToString(rawHash.Sum(nil))}
+	}
+
+	return testData
+}
+
+func TestCompare(t *testing.T) {
+	// arrange
+	HIBP := []string{
 		"01B307ACBA4F54F55AAFC33BB06BBBF6CA803E9A:100",
 		"5BAA61E4C9B93F3F0682250B6CF8331B7EE68FD8:20",
 		"64A6DA114D17AE8F167F6BE2C4AEBC9E99F7466C:1",
 		"B1B3773A05C0ED0176787A4F1574FF0075F7521E:9001",
 	}
-}
-
-func getWPMTestData(size int) []PasswordItem {
-	return []PasswordItem{
+	WPM := []PasswordItem{
 		{"example.com", "adrian", "64A6DA114D17AE8F167F6BE2C4AEBC9E99F7466C"},
 	}
-}
-
-func TestCompare(t *testing.T) {
-	// arrange
-	HIBP := getHIBPTestData()
-	WPM := getWPMTestData()
 
 	// act
 	matches := Compare(HIBP, WPM)
@@ -54,22 +67,28 @@ func TestCompare(t *testing.T) {
 }
 
 var testCaseSizes = []struct {
-	hibpSize int
-	wpmSize  int
+	HIBPSize int
+	WPMSize  int
 }{
-	{hibpSize: 10, wpmSize: 1000},
-	{hibpSize: 100, wpmSize: 1000},
-	// {hibpSize: 1000, wpmSize: 1000},
-	// {hibpSize: 10000, wpmSize: 1000},
-	// {hibpSize: 100000, wpmSize: 1000},
-	// {hibpSize: 1000000, wpmSize: 1000},
-	// {hibpSize: 10000000, wpmSize: 1000},
+	{HIBPSize: 10, WPMSize: 1000},
+	{HIBPSize: 100, WPMSize: 1000},
+	{HIBPSize: 1_000, WPMSize: 1000},
+	{HIBPSize: 10_000, WPMSize: 1000},
+	{HIBPSize: 100_000, WPMSize: 1000},
+	{HIBPSize: 1_000_000, WPMSize: 1000},
 }
 
 func BenchmarkCompare(b *testing.B) {
 	for _, testCaseSize := range testCaseSizes {
-		HIBP := getHIBPTestData(testCaseSize.hibpSize)
-		WPM := getWPMTestData(testCaseSize.wpmSize)
+		HIBP := generateHIBPTestData(testCaseSize.HIBPSize)
+		WPM := generateWPMTestData(testCaseSize.WPMSize)
+
+		if len(HIBP) != testCaseSize.HIBPSize {
+			panic(fmt.Sprintf("Problem with test data: Requested HIBP length doesn't match. Expected: %v actual: %v", testCaseSize.HIBPSize, len(HIBP)))
+		}
+		if len(WPM) != testCaseSize.WPMSize {
+			panic("Problem with test data: Requested WPM length doesn't match")
+		}
 
 		for i := 0; i < b.N; i++ {
 			Compare(HIBP, WPM)

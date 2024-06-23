@@ -2,4 +2,4 @@ test:
 	go test
 
 benchmark:
-	go test -bench=. -benchtime=5s -run=^# -benchmem
+	go test -bench=. -count=5 -run=^# -benchmem
