@@ -2,7 +2,7 @@ Given that I have used a password manager for many years (thus each password bei
 
 
 # file formats
-## haveibeenpwned file format
+## haveibeenpwned (hibp) file format
 A sorted list of SHA1 hashes
 ```
 01B307ACBA4F54F55AAFC33BB06BBBF6CA803E9A:100
@@ -37,7 +37,7 @@ Full format has been omitted for brevity.
 }
 ```
 
-## bitwarden -> whopwnedme format
+## bitwarden -> whopwnedme (wpm) format
 I don't want to have my passwords laying around in plain text. So I'll converted them all to SHA1, and this program will work with the below format:
 ```json
 {

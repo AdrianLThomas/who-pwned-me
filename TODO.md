@@ -1,0 +1,2 @@
+- Script/Tool to convert Bitwarden passwords to wpm format
+- The main tool: Take hibp file, are there any matches to wpm?
