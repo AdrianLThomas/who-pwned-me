@@ -45,7 +45,7 @@ I don't want to have my passwords laying around in plain text. So I'll converted
         {
             "name": "example.com",
             "username": "adrian",
-            "sha1": "64A6DA114D17AE8F167F6BE2C4AEBC9E99F7466C",
+            "sha1": "64A6DA114D17AE8F167F6BE2C4AEBC9E99F7466C"
         }
     ]
 }

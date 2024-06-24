@@ -95,8 +95,13 @@ func BenchmarkCompare(b *testing.B) {
 }
 
 func TestCompareFile(t *testing.T) {
-	/*
-		matches := CompareFile("hibp.txt", "wpm.txt")
-	*/
+	// TODO - reading from filesystem 😬
+	matches, err := CompareFiles("examples/hibp.txt", "examples/wpm.json")
 
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("Found matches:")
+	fmt.Println(matches)
 }
