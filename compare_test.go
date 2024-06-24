@@ -66,20 +66,18 @@ func TestCompare(t *testing.T) {
 	}
 }
 
-var testCaseSizes = []struct {
-	HIBPSize int
-	WPMSize  int
-}{
-	{HIBPSize: 10, WPMSize: 1000},
-	{HIBPSize: 100, WPMSize: 1000},
-	{HIBPSize: 1_000, WPMSize: 1000},
-	{HIBPSize: 10_000, WPMSize: 1000},
-	{HIBPSize: 100_000, WPMSize: 1000},
-	{HIBPSize: 1_000_000, WPMSize: 1000},
-}
-
 func BenchmarkCompare(b *testing.B) {
-	for _, testCaseSize := range testCaseSizes {
+	for _, testCaseSize := range []struct {
+		HIBPSize int
+		WPMSize  int
+	}{
+		{HIBPSize: 10, WPMSize: 1000},
+		{HIBPSize: 100, WPMSize: 1000},
+		{HIBPSize: 1_000, WPMSize: 1000},
+		{HIBPSize: 10_000, WPMSize: 1000},
+		{HIBPSize: 100_000, WPMSize: 1000},
+		{HIBPSize: 1_000_000, WPMSize: 1000},
+	} {
 		HIBP := generateHIBPTestData(testCaseSize.HIBPSize)
 		WPM := generateWPMTestData(testCaseSize.WPMSize)
 
@@ -94,4 +92,11 @@ func BenchmarkCompare(b *testing.B) {
 			Compare(HIBP, WPM)
 		}
 	}
+}
+
+func TestCompareFile(t *testing.T) {
+	/*
+		matches := CompareFile("hibp.txt", "wpm.txt")
+	*/
+
 }
