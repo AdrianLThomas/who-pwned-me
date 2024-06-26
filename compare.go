@@ -64,6 +64,42 @@ func readHIBPHashes(filename string) ([]string, error) {
 	return lines, nil
 }
 
+func readHIBPHashRange(filename string, hash string) ([]string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var hashRange []string
+	/*
+		binary chop to find the start of the hash range::::
+		open the file, seek to the middle, read the line, compare the first 5(?) hash to the first 5(?) hash value provided
+		loop // binary chop to find the range
+			is this line hash equal to arg hash? if so break;
+			is the readHash < hash? if so find the middle between the start and this position
+			otherwise, find the middle between this position and the end
+		loop // sequential search to find the start of the range
+			is current line hash the same? if so, continue backwards
+			else if hash is not the same, then we know the start range
+		loop // sequential search to find the end of the range
+			is current line hash the same? if so continue forward
+			else if hash is not the same, then we know the end range
+
+
+	*/
+	// scanner := bufio.NewScanner(file)
+	// for scanner.Scan() {
+	// 	hashRange = slices.Insert(hashRange, len(hashRange), scanner.Text())
+	// }
+
+	// if err := scanner.Err(); err != nil {
+	// 	return nil, err
+	// }
+
+	return hashRange, nil
+}
+
 func readPasswordItems(filename string) ([]PasswordItem, error) {
 	file, err := os.Open(filename)
 	if err != nil {
