@@ -3,6 +3,7 @@ package compare
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"os"
 	"slices"
 	"strings"
@@ -30,17 +31,110 @@ func Compare(hibp []string, passwords []PasswordItem) []PasswordItem {
 }
 
 func CompareFiles(pathToHibpFile string, pathToWpmFile string) ([]PasswordItem, error) {
-	hibp, err := readHIBPHashes(pathToHibpFile)
+	passwordItems, err := readPasswordItems(pathToWpmFile)
 	if err != nil {
 		return nil, err
 	}
 
-	passwords, err := readPasswordItems(pathToWpmFile)
+	file, err := os.Open(pathToHibpFile)
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
 
-	return Compare(hibp, passwords), nil
+	for _, item := range passwordItems {
+		password := item.password[:5]
+
+		thisHash, err := getHash(0, -1, file)
+
+		if err != nil {
+			panic(err)
+		}
+
+		if password == thisHash {
+			fmt.Println("BINGO")
+		}
+		/*
+			start = position 0
+			end = position fileSize
+			where in the file has this 5 character range?
+
+			thisLine := go to middle of file (seek right: find first '\n', then first char after):
+			passwordHex = take first 5(?) characters
+			if passwordHex < thisLine?
+				seek backwards (continue: set end to current position)
+			else
+				seek forwards (continue: set start to current position)
+		*/
+	}
+
+	// hibp, err := readHIBPHashes(pathToHibpFile)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// return Compare(hibp, passwordItems), nil
+
+	return nil, nil
+}
+
+func getHash(start int64, end int64, file *os.File) (string, error) {
+	// TODO handle EOF
+
+	const HASH_RANGE = 5
+
+	if end < 0 {
+		fileInfo, err := file.Stat()
+		if err != nil {
+			return "", err
+		}
+		end = fileInfo.Size() // TODO minus 1?
+	}
+
+	{
+		// seek to middle
+		middle := (start + end) / 2
+		_, err := file.Seek(middle, 0)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	reader := bufio.NewReader(file)
+	{
+		// read until we find new line
+		_, err := reader.ReadBytes('\n')
+		if err != nil {
+			return "", err
+		}
+	}
+
+	// we're now at the start of a new line
+	startOfHashBuffer := make([]byte, HASH_RANGE)
+	reader.Read(startOfHashBuffer)
+
+	fmt.Printf("Current hash: '%v'", string(startOfHashBuffer))
+
+	return "", nil
+
+	// if passwordHex < thisLine?
+	// 	seek backwards (continue: set end to current position)
+	// else
+	// 	seek forwards (continue: set start to current position)
+
+	// for start < end {
+	// 	middle := (start + end) / 2
+
+	// 	_, err := file.Seek(middle, 0)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// }
+
+	// _, err = file.Seek(start, 0)
+	// if err != nil {
+	// 	return nil, err
+	// }
 }
 
 func readHIBPHashes(filename string) ([]string, error) {
@@ -62,42 +156,6 @@ func readHIBPHashes(filename string) ([]string, error) {
 	}
 
 	return lines, nil
-}
-
-func readHIBPHashRange(filename string, hash string) ([]string, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	var hashRange []string
-	/*
-		binary chop to find the start of the hash range::::
-		open the file, seek to the middle, read the line, compare the first 5(?) hash to the first 5(?) hash value provided
-		loop // binary chop to find the range
-			is this line hash equal to arg hash? if so break;
-			is the readHash < hash? if so find the middle between the start and this position
-			otherwise, find the middle between this position and the end
-		loop // sequential search to find the start of the range
-			is current line hash the same? if so, continue backwards
-			else if hash is not the same, then we know the start range
-		loop // sequential search to find the end of the range
-			is current line hash the same? if so continue forward
-			else if hash is not the same, then we know the end range
-
-
-	*/
-	// scanner := bufio.NewScanner(file)
-	// for scanner.Scan() {
-	// 	hashRange = slices.Insert(hashRange, len(hashRange), scanner.Text())
-	// }
-
-	// if err := scanner.Err(); err != nil {
-	// 	return nil, err
-	// }
-
-	return hashRange, nil
 }
 
 func readPasswordItems(filename string) ([]PasswordItem, error) {
