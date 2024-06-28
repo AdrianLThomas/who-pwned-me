@@ -3,7 +3,6 @@ package compare
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"slices"
@@ -14,21 +13,6 @@ type PasswordItem struct {
 	Name     string `json:"name"`
 	Username string `json:"username"`
 	SHA1     string `json:"sha1"`
-}
-
-func Compare(hibp []string, passwords []PasswordItem) []PasswordItem {
-	found := make([]PasswordItem, 0)
-
-	for _, hibpHash := range hibp {
-		hash := strings.Split(hibpHash, ":")[0]
-		for _, item := range passwords {
-			if hash == item.SHA1 {
-				found = slices.Insert(found, len(found), item)
-			}
-		}
-	}
-
-	return found
 }
 
 func CompareFiles(pathToHibpFile string, pathToWpmFile string) ([]PasswordItem, error) {
@@ -45,30 +29,26 @@ func CompareFiles(pathToHibpFile string, pathToWpmFile string) ([]PasswordItem, 
 
 	foundItems := make([]PasswordItem, 0)
 	for _, item := range passwordItems {
-		password := item.SHA1[:5]
-
-		foundHashRange, err := findHashRange(0, -1, file, password)
+		foundHash, err := findHash(0, -1, file, item.SHA1)
 
 		if err != nil {
 			panic(err)
+			// TODO might be not found
 		}
 
-		foundMany := Compare(foundHashRange, []PasswordItem{item}) // TODO, we don't need to send this slice through! refactor for single?
-		foundItems = slices.Insert(foundItems, len(foundItems), foundMany[0])
+		if foundHash == item.SHA1 {
+			foundItems = slices.Insert(foundItems, len(foundItems), item)
+		}
 	}
 
 	return foundItems, nil
 }
 
-func findHashRange(start int64, end int64, file *os.File, desiredHashPrefix string) ([]string, error) {
-	// TODO handle EOF
-
-	const HASH_PREFIX_LENGTH = 5
-
+func findHash(start int64, end int64, file *os.File, hash string) (string, error) {
 	if end < 0 {
 		fileInfo, err := file.Stat()
 		if err != nil {
-			return []string{}, err
+			return "", err
 		}
 		end = fileInfo.Size()
 	}
@@ -78,7 +58,7 @@ func findHashRange(start int64, end int64, file *os.File, desiredHashPrefix stri
 		// seek to middle
 		_, err := file.Seek(middle, io.SeekStart)
 		if err != nil {
-			return []string{}, err
+			return "", err
 		}
 	}
 
@@ -87,29 +67,26 @@ func findHashRange(start int64, end int64, file *os.File, desiredHashPrefix stri
 		// read until we find new line
 		_, err := reader.ReadBytes('\n')
 		if err != nil {
-			return []string{}, err
+			return "", err
 		}
 	}
 
 	// we're now at the start of a new line
-	startOfHashBuffer := make([]byte, HASH_PREFIX_LENGTH)
-	reader.Read(startOfHashBuffer)
+	line, _, err := reader.ReadLine()
+	if err != nil {
+		return "", err
+	}
 
-	currentHashPrefix := string(startOfHashBuffer)
-	fmt.Printf("Current hash: '%v'", currentHashPrefix)
+	currentHash := strings.Split(string(line), ":")[0]
 
-	if currentHashPrefix == desiredHashPrefix {
-		// ok, we're close, sequentially seek backwards until we find the first instance...
-		// ok, now we have the first instance, keep looping forward and store each line in a file, ready to return..
-
-		panic("close!!!!!! TODO")
-
-	} else if desiredHashPrefix < currentHashPrefix {
+	if currentHash == hash {
+		return currentHash, nil // TODO log what line or something? and the number of instances?
+	} else if hash < currentHash {
 		// 	seek backwards (continue: set end to current position)
-		return findHashRange(start, middle, file, desiredHashPrefix)
+		return findHash(start, middle, file, hash)
 	} else {
 		// 	seek forwards (continue: set start to current position)
-		return findHashRange(middle, end, file, desiredHashPrefix)
+		return findHash(middle, end, file, hash)
 	}
 }
 
