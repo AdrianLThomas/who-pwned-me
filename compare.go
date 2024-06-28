@@ -64,13 +64,13 @@ func findHash(start int64, end int64, file *os.File, hash string) (string, error
 	}
 
 	reader := bufio.NewReader(file)
-	if start != 0 {
-		// we're likely part way through a line, so read until we find a new line
-		_, err := reader.ReadBytes('\n')
-		if err != nil {
-			return "", err
-		}
+	// if start != 0 { TODO THERE IS A BUG IF THE PASSWORD IS THE FIRST LINE!
+	// we're likely part way through a line, so read until we find a new line
+	_, err := reader.ReadBytes('\n')
+	if err != nil {
+		return "", err
 	}
+	// }
 
 	// we're now at the start of a new line
 	line, _, err := reader.ReadLine()
