@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"slices"
 	"strings"
@@ -69,13 +70,13 @@ func findHashRange(start int64, end int64, file *os.File, desiredHashPrefix stri
 		if err != nil {
 			return []string{}, err
 		}
-		end = fileInfo.Size() // TODO minus 1?
+		end = fileInfo.Size()
 	}
 
+	middle := (start + end) / 2
 	{
 		// seek to middle
-		middle := (start + end) / 2
-		_, err := file.Seek(middle, 0)
+		_, err := file.Seek(middle, io.SeekStart)
 		if err != nil {
 			return []string{}, err
 		}
@@ -98,24 +99,17 @@ func findHashRange(start int64, end int64, file *os.File, desiredHashPrefix stri
 	fmt.Printf("Current hash: '%v'", currentHashPrefix)
 
 	if currentHashPrefix == desiredHashPrefix {
-		// great, get the rest of the line
-		remainderOfHash, err := reader.ReadBytes('\n')
-		if err != nil {
-			return []string{}, err
-		}
+		// ok, we're close, sequentially seek backwards until we find the first instance...
+		// ok, now we have the first instance, keep looping forward and store each line in a file, ready to return..
 
-		hibpLine := currentHashPrefix + string(remainderOfHash)
-
-		// now record the full hash in a map and move on
-
-		// return findHashRange(0, 0, file, desiredHashPrefix)
+		panic("close!!!!!! TODO")
 
 	} else if desiredHashPrefix < currentHashPrefix {
-		return findHashRange(0, 0, file, desiredHashPrefix)
 		// 	seek backwards (continue: set end to current position)
+		return findHashRange(start, middle, file, desiredHashPrefix)
 	} else {
 		// 	seek forwards (continue: set start to current position)
-		return findHashRange(0, 0, file, desiredHashPrefix)
+		return findHashRange(middle, end, file, desiredHashPrefix)
 	}
 }
 
