@@ -55,14 +55,14 @@ func TestCompare(t *testing.T) {
 		t.Errorf("Expected 1 match, got %d", len(matches))
 	}
 	match := matches[0]
-	if match.name != "example.com" {
-		t.Errorf("Expected name to be example.com, got %s", match.name)
+	if match.Name != "example.com" {
+		t.Errorf("Expected name to be example.com, got %s", match.Name)
 	}
-	if match.username != "adrian" {
-		t.Errorf("Expected username to be adrian, got %s", match.username)
+	if match.Username != "adrian" {
+		t.Errorf("Expected username to be adrian, got %s", match.Username)
 	}
-	if match.password != "64A6DA114D17AE8F167F6BE2C4AEBC9E99F7466C" {
-		t.Errorf("Expected sha1 to be 64A6DA114D17AE8F167F6BE2C4AEBC9E99F7466C, got %s", match.password)
+	if match.SHA1 != "64A6DA114D17AE8F167F6BE2C4AEBC9E99F7466C" {
+		t.Errorf("Expected sha1 to be 64A6DA114D17AE8F167F6BE2C4AEBC9E99F7466C, got %s", match.SHA1)
 	}
 }
 
@@ -95,11 +95,13 @@ func BenchmarkCompare(b *testing.B) {
 }
 
 func TestCompareFiles(t *testing.T) {
-	_, err := CompareFiles("examples/hibp.txt", "examples/wpm.json")
+	found, err := CompareFiles("examples/hibp.txt", "examples/wpm.json")
 
 	if err != nil {
 		t.Error(err)
 	}
+
+	t.Log(found)
 }
 
 func BenchmarkCompareFiles(b *testing.B) {

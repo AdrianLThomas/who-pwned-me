@@ -10,9 +10,9 @@ import (
 )
 
 type PasswordItem struct {
-	name     string
-	username string
-	password string
+	Name     string `json:"name"`
+	Username string `json:"username"`
+	SHA1     string `json:"sha1"`
 }
 
 func Compare(hibp []string, passwords []PasswordItem) []PasswordItem {
@@ -21,7 +21,7 @@ func Compare(hibp []string, passwords []PasswordItem) []PasswordItem {
 	for _, hibpHash := range hibp {
 		hash := strings.Split(hibpHash, ":")[0]
 		for _, item := range passwords {
-			if hash == item.password {
+			if hash == item.SHA1 {
 				found = slices.Insert(found, len(found), item)
 			}
 		}
@@ -42,51 +42,32 @@ func CompareFiles(pathToHibpFile string, pathToWpmFile string) ([]PasswordItem, 
 	}
 	defer file.Close()
 
+	foundItems := make([]PasswordItem, 0)
 	for _, item := range passwordItems {
-		password := item.password[:5]
+		password := item.SHA1[:5]
 
-		thisHash, err := getHash(0, -1, file)
+		foundHashRange, err := findHashRange(0, -1, file, password)
 
 		if err != nil {
 			panic(err)
 		}
 
-		if password == thisHash {
-			fmt.Println("BINGO")
-		}
-		/*
-			start = position 0
-			end = position fileSize
-			where in the file has this 5 character range?
-
-			thisLine := go to middle of file (seek right: find first '\n', then first char after):
-			passwordHex = take first 5(?) characters
-			if passwordHex < thisLine?
-				seek backwards (continue: set end to current position)
-			else
-				seek forwards (continue: set start to current position)
-		*/
+		foundMany := Compare(foundHashRange, []PasswordItem{item}) // TODO, we don't need to send this slice through! refactor for single?
+		foundItems = slices.Insert(foundItems, len(foundItems), foundMany[0])
 	}
 
-	// hibp, err := readHIBPHashes(pathToHibpFile)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// return Compare(hibp, passwordItems), nil
-
-	return nil, nil
+	return foundItems, nil
 }
 
-func getHash(start int64, end int64, file *os.File) (string, error) {
+func findHashRange(start int64, end int64, file *os.File, desiredHashPrefix string) ([]string, error) {
 	// TODO handle EOF
 
-	const HASH_RANGE = 5
+	const HASH_PREFIX_LENGTH = 5
 
 	if end < 0 {
 		fileInfo, err := file.Stat()
 		if err != nil {
-			return "", err
+			return []string{}, err
 		}
 		end = fileInfo.Size() // TODO minus 1?
 	}
@@ -96,7 +77,7 @@ func getHash(start int64, end int64, file *os.File) (string, error) {
 		middle := (start + end) / 2
 		_, err := file.Seek(middle, 0)
 		if err != nil {
-			return "", err
+			return []string{}, err
 		}
 	}
 
@@ -105,57 +86,37 @@ func getHash(start int64, end int64, file *os.File) (string, error) {
 		// read until we find new line
 		_, err := reader.ReadBytes('\n')
 		if err != nil {
-			return "", err
+			return []string{}, err
 		}
 	}
 
 	// we're now at the start of a new line
-	startOfHashBuffer := make([]byte, HASH_RANGE)
+	startOfHashBuffer := make([]byte, HASH_PREFIX_LENGTH)
 	reader.Read(startOfHashBuffer)
 
-	fmt.Printf("Current hash: '%v'", string(startOfHashBuffer))
+	currentHashPrefix := string(startOfHashBuffer)
+	fmt.Printf("Current hash: '%v'", currentHashPrefix)
 
-	return "", nil
+	if currentHashPrefix == desiredHashPrefix {
+		// great, get the rest of the line
+		remainderOfHash, err := reader.ReadBytes('\n')
+		if err != nil {
+			return []string{}, err
+		}
 
-	// if passwordHex < thisLine?
-	// 	seek backwards (continue: set end to current position)
-	// else
-	// 	seek forwards (continue: set start to current position)
+		hibpLine := currentHashPrefix + string(remainderOfHash)
 
-	// for start < end {
-	// 	middle := (start + end) / 2
+		// now record the full hash in a map and move on
 
-	// 	_, err := file.Seek(middle, 0)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// }
+		// return findHashRange(0, 0, file, desiredHashPrefix)
 
-	// _, err = file.Seek(start, 0)
-	// if err != nil {
-	// 	return nil, err
-	// }
-}
-
-func readHIBPHashes(filename string) ([]string, error) {
-	// TODO - this will definitely use up too much memory and _isn't_ the right approach, but.. WIP! let's get it working first.
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
+	} else if desiredHashPrefix < currentHashPrefix {
+		return findHashRange(0, 0, file, desiredHashPrefix)
+		// 	seek backwards (continue: set end to current position)
+	} else {
+		// 	seek forwards (continue: set start to current position)
+		return findHashRange(0, 0, file, desiredHashPrefix)
 	}
-	defer file.Close()
-
-	var lines []string
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		lines = slices.Insert(lines, len(lines), scanner.Text())
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-
-	return lines, nil
 }
 
 func readPasswordItems(filename string) ([]PasswordItem, error) {
@@ -167,9 +128,7 @@ func readPasswordItems(filename string) ([]PasswordItem, error) {
 
 	var wpmData struct {
 		Passwords []struct {
-			Name     string `json:"name"`
-			Username string `json:"username"`
-			SHA1     string `json:"sha1"`
+			PasswordItem
 		} `json:"passwords"`
 	}
 
@@ -181,9 +140,9 @@ func readPasswordItems(filename string) ([]PasswordItem, error) {
 	passwordItems := make([]PasswordItem, len(wpmData.Passwords))
 	for i, item := range wpmData.Passwords {
 		passwordItems[i] = PasswordItem{
-			name:     item.Name,
-			username: item.Username,
-			password: item.SHA1,
+			Name:     item.Name,
+			Username: item.Username,
+			SHA1:     item.SHA1,
 		}
 	}
 
