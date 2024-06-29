@@ -3,7 +3,6 @@ package compare
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"slices"
@@ -83,13 +82,10 @@ func findHash(start int64, end int64, file *os.File, hash string) (string, error
 	if currentHash == hash {
 		return currentHash, nil // TODO log what line or something? and the number of instances?
 	} else if hash < currentHash {
-		fmt.Println("Seeking backwards")
-		// 	seek backwards (continue: set end to current position)
+		// 	seek backwards
 		return findHash(start, middle, file, hash)
 	} else {
-		fmt.Println("Seeking forwards")
-
-		// 	seek forwards (continue: set start to current position)
+		// 	seek forwards
 		return findHash(middle, end, file, hash)
 	}
 }
