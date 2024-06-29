@@ -32,8 +32,11 @@ func CompareFiles(pathToHibpFile string, pathToWpmFile string) ([]PasswordItem, 
 		foundHash, err := findHash(0, -1, file, item.SHA1)
 
 		if err != nil {
-			panic(err)
-			// TODO might be not found
+			if err == io.EOF {
+				return foundItems, nil
+			} else {
+				panic(err)
+			}
 		}
 
 		if foundHash == item.SHA1 {

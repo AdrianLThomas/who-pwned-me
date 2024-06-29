@@ -97,13 +97,23 @@ func generateWPMTestData(size int) []PasswordItem {
 // }
 
 func TestCompareFiles(t *testing.T) {
-	found, err := CompareFiles("examples/hibp.txt", "examples/wpm.json")
+	// arrange
+	expectedResult := PasswordItem{Name: "example.com", Username: "adrian", SHA1: "00000099A4D3034E14DF60EF50799F695C27C0EC"}
 
+	// act
+	actualResults, err := CompareFiles("examples/hibp.txt", "examples/wpm.json")
+
+	// assert
 	if err != nil {
 		t.Error(err)
 	}
 
-	fmt.Println(found[0]) // TODO log.
+	if len(actualResults) != 1 {
+		t.Errorf("Expected 1 match, got %d", len(actualResults))
+	}
+	if expectedResult != actualResults[0] {
+		t.Errorf("Expected result '%v' did not match actual '%v'", expectedResult, actualResults)
+	}
 }
 
 func BenchmarkCompareFiles(b *testing.B) {
