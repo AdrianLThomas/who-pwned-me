@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -29,7 +30,7 @@ func CompareFiles(pathToHibpFile string, pathToWpmFile string) ([]PasswordItem, 
 
 	foundItems := make([]PasswordItem, 0)
 	for _, item := range passwordItems {
-		foundHash, err := findHash(0, -1, file, item.SHA1)
+		foundHash, _, err := findHash(0, -1, file, item.SHA1)
 
 		if err != nil {
 			if err == io.EOF {
@@ -47,11 +48,12 @@ func CompareFiles(pathToHibpFile string, pathToWpmFile string) ([]PasswordItem, 
 	return foundItems, nil
 }
 
-func findHash(start int64, end int64, file *os.File, hash string) (string, error) {
+// Returns the found hash as a string, and how many occurances as an integer. Otherwise an empty string. If there is an error, it indicates a problem reading the file
+func findHash(start int64, end int64, file *os.File, hash string) (string, int64, error) {
 	if end < 0 {
 		fileInfo, err := file.Stat()
 		if err != nil {
-			return "", err
+			return "", 0, err
 		}
 		end = fileInfo.Size()
 	}
@@ -61,7 +63,7 @@ func findHash(start int64, end int64, file *os.File, hash string) (string, error
 		// seek to middle
 		_, err := file.Seek(middle, io.SeekStart)
 		if err != nil {
-			return "", err
+			return "", 0, err
 		}
 	}
 
@@ -70,20 +72,23 @@ func findHash(start int64, end int64, file *os.File, hash string) (string, error
 		// we're likely part way through a line, so read until we find a new line
 		_, err := reader.ReadBytes('\n')
 		if err != nil {
-			return "", err
+			return "", 0, err
 		}
 	}
 
 	// we're now at the start of a new line
 	line, _, err := reader.ReadLine()
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 
-	currentHash := strings.Split(string(line), ":")[0]
+	lineString := string(line)
+	lineElements := strings.Split(lineString, ":")
+	currentHash := lineElements[0]
+	numberOfInstances, _ := strconv.ParseInt(lineElements[1], 10, 64)
 
 	if currentHash == hash {
-		return currentHash, nil // TODO log what line or something? and the number of instances?
+		return currentHash, numberOfInstances, nil
 	} else if hash < currentHash {
 		// 	seek backwards
 		return findHash(start, middle, file, hash)
