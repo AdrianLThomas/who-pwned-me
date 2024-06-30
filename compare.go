@@ -35,7 +35,7 @@ func CompareFiles(pathToHibpFile string, pathToWpmFile string) ([]PasswordItem, 
 			if err == io.EOF {
 				return foundItems, nil
 			} else {
-				panic(err)
+				return foundItems, err
 			}
 		}
 
