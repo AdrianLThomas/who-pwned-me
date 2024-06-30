@@ -15,6 +15,7 @@ type PasswordItem struct {
 	SHA1     string `json:"sha1"`
 }
 
+// Given a file to the HIBP database and the file with SHA1 passwords, return all matching items. If there's an error, it could be related to a problem with the source files or no match found
 func CompareFiles(pathToHibpFile string, pathToWpmFile string) ([]PasswordItem, error) {
 	passwordItems, err := readPasswordItems(pathToWpmFile)
 	if err != nil {
@@ -105,9 +106,7 @@ func readPasswordItems(filename string) ([]PasswordItem, error) {
 	defer file.Close()
 
 	var wpmData struct {
-		Passwords []struct {
-			PasswordItem
-		} `json:"passwords"`
+		Passwords []PasswordItem `json:"passwords"`
 	}
 
 	err = json.NewDecoder(file).Decode(&wpmData)
@@ -115,14 +114,5 @@ func readPasswordItems(filename string) ([]PasswordItem, error) {
 		return nil, err
 	}
 
-	passwordItems := make([]PasswordItem, len(wpmData.Passwords))
-	for i, item := range wpmData.Passwords {
-		passwordItems[i] = PasswordItem{
-			Name:     item.Name,
-			Username: item.Username,
-			SHA1:     item.SHA1,
-		}
-	}
-
-	return passwordItems, nil
+	return wpmData.Passwords, nil
 }
