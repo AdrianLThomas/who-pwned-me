@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"io"
 	"os"
-	"slices"
 	"strconv"
 	"strings"
 )
@@ -41,7 +40,7 @@ func CompareFiles(pathToHibpFile string, pathToWpmFile string) ([]PasswordItem, 
 		}
 
 		if foundHash == item.SHA1 {
-			foundItems = slices.Insert(foundItems, len(foundItems), item)
+			foundItems = append(foundItems, item)
 		}
 	}
 
