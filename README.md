@@ -1,5 +1,11 @@
 Given that I have used a password manager for many years (thus each password being unique), yet being in many data breaches.... let's SHA1 hash all my passwords and compare it to the haveibeenpwned database to find out who has been irresponsible with my accounts.
 
+# Approach
+The HIBP database is a flat file format of sorted hashes, prepended with a count of how many time the password has been "seen". 
+
+The filesize is around 40GB, so not quick to search through by grep alone. 
+
+This tool performs a binary search for all the hashes and returns a response within milliseconds.
 
 # file formats
 ## haveibeenpwned (hibp) file format
