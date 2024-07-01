@@ -18,8 +18,6 @@ type PasswordItem struct {
 
 // Given a file to the HIBP database and the file with SHA1 passwords, return all matching items. If there's an error, it could be related to a problem with the source files or no match found
 func CompareFiles(pathToHibpFile string, pathToWpmFile string) ([]PasswordItem, error) {
-	// TODO move reading files up a level
-
 	passwordItemsFile, err := os.Open(pathToWpmFile)
 	{
 		if err != nil {
