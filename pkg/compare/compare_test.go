@@ -12,7 +12,7 @@ func TestCompareFiles(t *testing.T) {
 	expectedResult := PasswordItem{Name: "example.com", Username: "adrian", SHA1: "00000099A4D3034E14DF60EF50799F695C27C0EC"}
 
 	// act
-	actualResults, err := CompareFiles("test/hibp.txt", "test/wpm.json")
+	actualResults, err := CompareFiles("../../test/hibp.txt", "../../test/wpm.json")
 
 	// assert
 	if err != nil {
@@ -29,7 +29,7 @@ func TestCompareFiles(t *testing.T) {
 
 func BenchmarkCompareFiles(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_, err := CompareFiles("test/hibp.txt", "test/wpm.json")
+		_, err := CompareFiles("../../test/hibp.txt", "../../test/wpm.json")
 		if err != nil {
 			b.Error(err)
 		}
