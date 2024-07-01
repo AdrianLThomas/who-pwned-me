@@ -39,8 +39,12 @@ func CompareFiles(pathToHibpFile string, pathToWpmFile string) ([]PasswordItem, 
 	defer file.Close()
 
 	foundItems := make([]PasswordItem, 0)
+	fileInfo, fileErr := file.Stat()
+	if fileErr != nil {
+		return nil, fileErr
+	}
 	for _, item := range passwordItems {
-		foundHash, _, err := findHash(0, -1, file, item.SHA1)
+		foundHash, _, err := findHash(0, fileInfo.Size(), file, item.SHA1)
 
 		if err != nil {
 			if err == io.EOF {
@@ -60,14 +64,6 @@ func CompareFiles(pathToHibpFile string, pathToWpmFile string) ([]PasswordItem, 
 
 // Returns the found hash as a string, and how many occurances as an integer. Otherwise an empty string. If there is an error, it indicates a problem reading the file
 func findHash(start int64, end int64, file *os.File, hash string) (string, int64, error) {
-	if end < 0 {
-		fileInfo, err := file.Stat()
-		if err != nil {
-			return "", 0, err
-		}
-		end = fileInfo.Size()
-	}
-
 	middle := (start + end) / 2
 	{
 		// seek to middle
@@ -76,7 +72,6 @@ func findHash(start int64, end int64, file *os.File, hash string) (string, int64
 			return "", 0, err
 		}
 	}
-
 	reader := bufio.NewReader(file)
 	if start != end { // if the result happens to be the first line, then don't bother skipping to the next line.
 		// we're likely part way through a line, so read until we find a new line
