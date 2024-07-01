@@ -1,41 +1,37 @@
 package compare
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
-	"fmt"
-	"math/rand"
+	"os"
 	"reflect"
-	"slices"
 	"strings"
 	"testing"
 )
 
-func generateHIBPTestData(size int) []string {
-	testData := make([]string, size)
+// func generateHIBPTestData(size int) []string {
+// 	testData := make([]string, size)
 
-	for i := 0; i < size; i++ {
-		countPrefix := rand.Intn(10000) + 1
-		rawHash := sha1.New()
-		rawHash.Write([]byte(fmt.Sprint(i)))
-		hash := hex.EncodeToString(rawHash.Sum(nil)) + ":" + fmt.Sprint(countPrefix)
-		testData[i] = hash
-	}
-	slices.Sort(testData)
+// 	for i := 0; i < size; i++ {
+// 		countPrefix := rand.Intn(10000) + 1
+// 		rawHash := sha1.New()
+// 		rawHash.Write([]byte(fmt.Sprint(i)))
+// 		hash := hex.EncodeToString(rawHash.Sum(nil)) + ":" + fmt.Sprint(countPrefix)
+// 		testData[i] = hash
+// 	}
+// 	slices.Sort(testData)
 
-	return testData
-}
+// 	return testData
+// }
 
-func generateWPMTestData(size int) []PasswordItem {
-	testData := make([]PasswordItem, size)
-	for i := 0; i < size; i++ {
-		rawHash := sha1.New()
-		rawHash.Write([]byte(fmt.Sprint(i * i)))
-		testData[i] = PasswordItem{"example.com" + fmt.Sprint(i), "adrian " + fmt.Sprint(i), hex.EncodeToString(rawHash.Sum(nil))}
-	}
+// func generateWPMTestData(size int) []PasswordItem {
+// 	testData := make([]PasswordItem, size)
+// 	for i := 0; i < size; i++ {
+// 		rawHash := sha1.New()
+// 		rawHash.Write([]byte(fmt.Sprint(i * i)))
+// 		testData[i] = PasswordItem{"example.com" + fmt.Sprint(i), "adrian " + fmt.Sprint(i), hex.EncodeToString(rawHash.Sum(nil))}
+// 	}
 
-	return testData
-}
+// 	return testData
+// }
 
 // TODO refactor
 // func TestCompare(t *testing.T) {
@@ -168,4 +164,38 @@ func TestReadPasswordItems(t *testing.T) {
 	if !reflect.DeepEqual(passwordItems, expectedItems) {
 		t.Errorf("Expected password items to be %v, but got %v", expectedItems, passwordItems)
 	}
+}
+func TestFindHash(t *testing.T) {
+	// arrange
+	data := []byte("HASH1:1\nHASH2:2\nHASH3:3\nHASH4:4\nHASH5:5\n")
+	hashToFind := "HASH3"
+	start := int64(0)
+	end := int64(len(data))
+	expectedCount := int64(3)
+	file, err := os.CreateTemp("", "test_file")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// defer os.Remove(file.Name())
+
+	_, err = file.Write(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// act
+	gotHash, gotCount, err := findHash(start, end, file, hashToFind)
+
+	// assert
+	// TODO - add a test table?
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if gotHash != hashToFind {
+		t.Errorf("findHash(%d, %d, file, %q) = %q, want %q", start, end, hashToFind, gotHash, expectedCount)
+	}
+	if gotCount != expectedCount {
+		t.Errorf("findHash(%d, %d, file, %q) count = %d, want %d", start, end, hashToFind, gotCount, expectedCount)
+	}
+
 }
