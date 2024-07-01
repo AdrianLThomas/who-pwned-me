@@ -168,34 +168,94 @@ func TestReadPasswordItems(t *testing.T) {
 func TestFindHash(t *testing.T) {
 	// arrange
 	data := []byte("HASH1:1\nHASH2:2\nHASH3:3\nHASH4:4\nHASH5:5\n")
-	hashToFind := "HASH3"
 	start := int64(0)
 	end := int64(len(data))
-	expectedCount := int64(3)
+	// expectedCount := int64(3)
 	file, err := os.CreateTemp("", "test_file")
 	if err != nil {
 		t.Fatal(err)
 	}
-	// defer os.Remove(file.Name())
+	defer os.Remove(file.Name())
 
 	_, err = file.Write(data)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// act
-	gotHash, gotCount, err := findHash(start, end, file, hashToFind)
+	// arrange
+	tests := []struct {
+		name          string
+		start         int64
+		end           int64
+		hashToFind    string
+		expectedHash  string
+		expectedCount int64
+		expectedError string
+	}{
+		{
+			name:          "Valid hash found",
+			start:         start,
+			end:           end,
+			hashToFind:    "HASH3",
+			expectedHash:  "HASH3",
+			expectedCount: 3,
+			expectedError: "",
+		},
+		{
+			name:          "Invalid hash not found",
+			start:         start,
+			end:           end,
+			hashToFind:    "INVALID_HASH",
+			expectedHash:  "",
+			expectedCount: 0,
+			expectedError: "",
+		},
+		{
+			name:          "Invalid range",
+			start:         end,   // topsy turvy
+			end:           start, // topsy turvy
+			hashToFind:    "INVALID_RANGE",
+			expectedHash:  "",
+			expectedCount: 0,
+			expectedError: "invalid range",
+		},
+		{
+			name:          "Invalid range",
+			start:         -10, // woops
+			end:           10,
+			hashToFind:    "INVALID_RANGE",
+			expectedHash:  "",
+			expectedCount: 0,
+			expectedError: "invalid range",
+		},
+		{
+			name:          "Invalid range",
+			start:         10,
+			end:           -10, // woops
+			hashToFind:    "INVALID_RANGE",
+			expectedHash:  "",
+			expectedCount: 0,
+			expectedError: "invalid range",
+		},
+		// TODO
+		// hash at very start of range, hash in middle, hash at very end
+	}
 
-	// assert
-	// TODO - add a test table?
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
-	if gotHash != hashToFind {
-		t.Errorf("findHash(%d, %d, file, %q) = %q, want %q", start, end, hashToFind, gotHash, expectedCount)
-	}
-	if gotCount != expectedCount {
-		t.Errorf("findHash(%d, %d, file, %q) count = %d, want %d", start, end, hashToFind, gotCount, expectedCount)
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// act
+			gotHash, gotCount, err := findHash(test.start, test.end, file, test.hashToFind)
 
+			// assert
+			if err != nil && err.Error() != test.expectedError {
+				t.Errorf("Unexpected error: %v, expected: %v", err, test.expectedError)
+			}
+			if gotHash != test.expectedHash {
+				t.Errorf("findHash(%d, %d, file, %q) = %q, want %q", test.start, test.end, test.hashToFind, gotHash, test.expectedHash)
+			}
+			if gotCount != test.expectedCount {
+				t.Errorf("findHash(%d, %d, file, %q) count = %d, want %d", test.start, test.end, test.hashToFind, gotCount, test.expectedCount)
+			}
+		})
+	}
 }

@@ -3,6 +3,7 @@ package compare
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"strconv"
@@ -64,6 +65,10 @@ func CompareFiles(pathToHibpFile string, pathToWpmFile string) ([]PasswordItem, 
 
 // Returns the found hash as a string, and how many occurances as an integer. Otherwise an empty string. If there is an error, it indicates a problem reading the file
 func findHash(start int64, end int64, file *os.File, hash string) (string, int64, error) {
+	if start < 0 || end < 0 || start > end {
+		return "", 0, errors.New("invalid range")
+	}
+
 	middle := (start + end) / 2
 	{
 		// seek to middle
@@ -84,7 +89,7 @@ func findHash(start int64, end int64, file *os.File, hash string) (string, int64
 	// we're now at the start of a new line
 	line, _, err := reader.ReadLine()
 	if err != nil {
-		return "", 0, err
+		return "", 0, nil
 	}
 
 	lineString := string(line)
