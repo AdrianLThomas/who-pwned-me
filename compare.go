@@ -17,7 +17,17 @@ type PasswordItem struct {
 
 // Given a file to the HIBP database and the file with SHA1 passwords, return all matching items. If there's an error, it could be related to a problem with the source files or no match found
 func CompareFiles(pathToHibpFile string, pathToWpmFile string) ([]PasswordItem, error) {
-	passwordItems, err := readPasswordItems(pathToWpmFile)
+	// TODO move reading files up a level
+
+	passwordItemsFile, err := os.Open(pathToWpmFile)
+	{
+		if err != nil {
+			return nil, err
+		}
+		defer passwordItemsFile.Close()
+	}
+
+	passwordItems, err := readPasswordItems(passwordItemsFile)
 	if err != nil {
 		return nil, err
 	}
@@ -98,18 +108,12 @@ func findHash(start int64, end int64, file *os.File, hash string) (string, int64
 	}
 }
 
-func readPasswordItems(filename string) ([]PasswordItem, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
+func readPasswordItems(passwordItemsReader io.Reader) ([]PasswordItem, error) {
 	var wpmData struct {
 		Passwords []PasswordItem `json:"passwords"`
 	}
 
-	err = json.NewDecoder(file).Decode(&wpmData)
+	err := json.NewDecoder(passwordItemsReader).Decode(&wpmData)
 	if err != nil {
 		return nil, err
 	}

@@ -5,7 +5,9 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/rand"
+	"reflect"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -122,5 +124,48 @@ func BenchmarkCompareFiles(b *testing.B) {
 		if err != nil {
 			b.Error(err)
 		}
+	}
+}
+func TestReadPasswordItems(t *testing.T) {
+	// arrange
+	jsonData := `
+	{
+		"passwords": [
+			{
+				"name": "example.com",
+				"username": "adrian",
+				"sha1": "64A6DA114D17AE8F167F6BE2C4AEBC9E99F7466C"
+			},
+			{
+				"name": "example.org",
+				"username": "thomas",
+				"sha1": "B1B3773A05C0ED0176787A4F1574FF0075F7521E"
+			}
+		]
+	}`
+	expectedItems := []PasswordItem{
+		{
+			Name:     "example.com",
+			Username: "adrian",
+			SHA1:     "64A6DA114D17AE8F167F6BE2C4AEBC9E99F7466C",
+		},
+		{
+			Name:     "example.org",
+			Username: "thomas",
+			SHA1:     "B1B3773A05C0ED0176787A4F1574FF0075F7521E",
+		},
+	}
+	reader := strings.NewReader(jsonData)
+
+	// act
+	passwordItems, err := readPasswordItems(reader)
+
+	// assert
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	if !reflect.DeepEqual(passwordItems, expectedItems) {
+		t.Errorf("Expected password items to be %v, but got %v", expectedItems, passwordItems)
 	}
 }
