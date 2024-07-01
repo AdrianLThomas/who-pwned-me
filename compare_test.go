@@ -170,7 +170,6 @@ func TestFindHash(t *testing.T) {
 	data := []byte("HASH1:1\nHASH2:2\nHASH3:3\nHASH4:4\nHASH5:5\n")
 	start := int64(0)
 	end := int64(len(data))
-	// expectedCount := int64(3)
 	file, err := os.CreateTemp("", "test_file")
 	if err != nil {
 		t.Fatal(err)
@@ -237,8 +236,24 @@ func TestFindHash(t *testing.T) {
 			expectedCount: 0,
 			expectedError: "invalid range",
 		},
-		// TODO
-		// hash at very start of range, hash in middle, hash at very end
+		{
+			name:          "Hash at start of range",
+			start:         start,
+			end:           end,
+			hashToFind:    "HASH1",
+			expectedHash:  "HASH1",
+			expectedCount: 1,
+			expectedError: "",
+		},
+		{
+			name:          "Has at end of range",
+			start:         start,
+			end:           end,
+			hashToFind:    "HASH5",
+			expectedHash:  "HASH5",
+			expectedCount: 5,
+			expectedError: "",
+		},
 	}
 
 	for _, test := range tests {
