@@ -8,3 +8,6 @@ benchmark:
 
 run:
 	go run cmd/main.go test/hibp.txt test/wpm.json
+
+build:
+	go build -o who-pwned-me cmd/main.go
