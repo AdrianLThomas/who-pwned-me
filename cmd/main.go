@@ -11,14 +11,14 @@ import (
 
 func main() {
 	// TODO check messaging
-	// TODO and add examples.
-	// TODO string interpolate? providers := []string{"bitwarden"}
-	const usageHelpMessage = `Usage: who-pwned-me [command]
+
+	providers := [...]string{"bitwarden"}
+	usageHelpMessage := fmt.Sprintf(`Usage: who-pwned-me [command]
 
 	Commands:
 		convert  Converts a plain text password file to hashed SHA1 versions for who-pwned me to use
 			-provider string
-					Enable provider (default ""), supported providers: [bitwarden]
+					Enable provider (default ""), supported providers: %s
 			-path string
 					Path to the exported password file to convert (default "")
 
@@ -26,7 +26,12 @@ func main() {
 			-hibp-path string
 					Path to the HIBP password file, containing leaked SHA1 hashes (default "")
 			-wpm-path string
-					Path to the WPM password file, containing your SHA1 hashed passwords (default "")`
+					Path to the WPM password file, containing your SHA1 hashed passwords (default "")
+	
+	Examples:
+		who-pwned-me convert -provider bitwarden -path bitwarden.json # convert the provided bitwarden json file to a who-pwned-me file
+		who-pwned-me compare -hibp-path hibp.txt -wpm-path wpm.json # compare the who-pwned-me file with the haveibeenpwned database file
+					`, providers)
 	convertCommand := flag.NewFlagSet("convert", flag.ExitOnError)
 	convertProvider := convertCommand.String("provider", "REQUIRED", "provider")
 	convertPath := convertCommand.String("path", "REQUIRED", "path")
