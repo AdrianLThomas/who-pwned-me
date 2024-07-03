@@ -1,0 +1,19 @@
+{
+    "encrypted": false,
+    "items": [
+      {
+        "name": "example.com",
+        "login": {
+          "username": null,
+          "password": "password1234"
+        }
+      },
+      {
+        "name": "example2.com",
+        "login": {
+          "username": null,
+          "password": "password"
+        }
+      }
+    ]
+  }

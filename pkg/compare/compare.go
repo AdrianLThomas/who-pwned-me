@@ -10,6 +10,10 @@ import (
 	"strings"
 )
 
+type WPMData struct {
+	Passwords []PasswordItem `json:"passwords"`
+}
+
 type PasswordItem struct {
 	Name     string `json:"name"`
 	Username string `json:"username"`
@@ -107,9 +111,7 @@ func findHash(start int64, end int64, file *os.File, hash string) (string, int64
 }
 
 func readPasswordItems(passwordItemsReader io.Reader) ([]PasswordItem, error) {
-	var wpmData struct {
-		Passwords []PasswordItem `json:"passwords"`
-	}
+	var wpmData WPMData
 
 	err := json.NewDecoder(passwordItemsReader).Decode(&wpmData)
 	if err != nil {

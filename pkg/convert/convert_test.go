@@ -35,20 +35,20 @@ func TestConvertBitwardenJSON(t *testing.T) {
 			{
 				Name: "example.com",
 				Login: struct {
-					Username *string "json:\"username\""
-					Password string  "json:\"password\""
+					Username string "json:\"username\""
+					Password string "json:\"password\""
 				}{
-					Username: stringPtr("adrian"),
+					Username: "adrian",
 					Password: "password123",
 				},
 			},
 			{
 				Name: "example.org",
 				Login: struct {
-					Username *string "json:\"username\""
-					Password string  "json:\"password\""
+					Username string "json:\"username\""
+					Password string "json:\"password\""
 				}{
-					Username: nil,
+					Username: "",
 					Password: "pass456",
 				},
 			},
@@ -56,7 +56,7 @@ func TestConvertBitwardenJSON(t *testing.T) {
 	}
 
 	// act
-	data, err := ConvertBitwardenJSON(reader)
+	data, err := convertBitwardenJSON(reader)
 
 	// assert
 	if err != nil {
@@ -65,8 +65,4 @@ func TestConvertBitwardenJSON(t *testing.T) {
 	if !reflect.DeepEqual(data, expectedData) {
 		t.Errorf("Expected data to be %v, but got %v", expectedData, data)
 	}
-}
-
-func stringPtr(s string) *string {
-	return &s
 }

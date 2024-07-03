@@ -6,18 +6,19 @@ import (
 	"os"
 
 	"github.com/AdrianLThomas/who-pwned-me/pkg/compare"
+	"github.com/AdrianLThomas/who-pwned-me/pkg/convert"
 )
 
 func main() {
 	// TODO check messaging
 	// TODO and add examples.
-	// TODO string interpolate? providers := []string{"Bitwarden"}
+	// TODO string interpolate? providers := []string{"bitwarden"}
 	const usageHelpMessage = `Usage: who-pwned-me [command]
 
 	Commands:
 		convert  Converts a plain text password file to hashed SHA1 versions for who-pwned me to use
 			-provider string
-					Enable provider (default ""), supported providers: [Bitwarden]
+					Enable provider (default ""), supported providers: [bitwarden]
 			-path string
 					Path to the exported password file to convert (default "")
 
@@ -41,19 +42,16 @@ func main() {
 
 	switch os.Args[1] {
 	case "convert":
+		// TODO check for prescence of subcommands (missing args)
 		convertCommand.Parse(os.Args[2:])
-		fmt.Println("subcommand 'convert'")
-		fmt.Println("  provider:", *convertProvider)
-		fmt.Println("  path:", *convertPath)
-		fmt.Println("  tail:", convertCommand.Args())
-		// TODO, integrate
+		json, err := convert.ConvertForProvider(*convertProvider, *convertPath)
+		handleIfError(err)
+
+		fmt.Println(json) // TODO - maybe support output file too, but to stdout is fine for now.
 	case "compare":
 		compareCommand.Parse(os.Args[2:])
 		passwordItems, err := compare.CompareFiles(*compareHIBPPath, *compareWPMPath)
-		if err != nil {
-			fmt.Printf("Error: %v\n", err)
-			os.Exit(1)
-		}
+		handleIfError(err)
 
 		fmt.Printf("Found: %v", passwordItems)
 	default:
@@ -61,4 +59,11 @@ func main() {
 		os.Exit(1)
 	}
 
+}
+
+func handleIfError(err error) {
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
+	}
 }
