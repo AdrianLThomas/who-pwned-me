@@ -99,7 +99,10 @@ func findHash(start int64, end int64, file *os.File, hash string) (string, int64
 	currentHash := lineElements[0]
 	numberOfInstances, _ := strconv.ParseInt(lineElements[1], 10, 64)
 
-	if currentHash == hash {
+	if middle == start || middle == end {
+		// escape, we've exhausted the search
+		return "", 0, nil
+	} else if currentHash == hash {
 		return currentHash, numberOfInstances, nil
 	} else if hash < currentHash {
 		// 	seek backwards

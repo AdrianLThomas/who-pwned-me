@@ -114,7 +114,7 @@ func TestFindHash(t *testing.T) {
 			expectedError: "",
 		},
 		{
-			name:          "Invalid hash not found",
+			name:          "Hash not found",
 			start:         start,
 			end:           end,
 			hashToFind:    "INVALID_HASH",
