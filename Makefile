@@ -1,10 +1,10 @@
 .PHONY: test benchmark run
 
 test:
-	go test ./pkg/**
+	go test ./pkg/...
 
 benchmark:
-	go test -bench=. -benchtime=10s -run=^# -benchmem
+	go test ./pkg/... -bench=. -benchtime=10s -run=^# -benchmem
 
 run-compare:
 	go run cmd/main.go compare -hibp-path test/hibp.txt -wpm-path test/wpm.json
