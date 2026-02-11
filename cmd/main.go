@@ -23,7 +23,7 @@ func main() {
 
 		compare  Compare the HIBP database against your own WPM password file
 			-hibp-path
-					Path to the haveibeenpwned password file, containing SHA1 hashes (REQUIRED)
+					Path to the haveibeenpwned password file or directory of range files (REQUIRED)
 			-wpm-path
 					Path to the who-pwned-me password file, containing your SHA1 hashed passwords (REQUIRED)
 	
@@ -63,7 +63,7 @@ func main() {
 		} else if *compareWPMPath == "" {
 			handleIfError(errors.New("no WPM path specified"))
 		}
-		passwordItems, err := compare.CompareFiles(*compareHIBPPath, *compareWPMPath)
+		passwordItems, err := compare.Compare(*compareHIBPPath, *compareWPMPath)
 		handleIfError(err)
 
 		fmt.Printf("Found: %v", passwordItems)

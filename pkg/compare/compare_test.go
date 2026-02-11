@@ -27,6 +27,79 @@ func TestCompareFiles(t *testing.T) {
 	}
 }
 
+func TestCompareWithDirectory(t *testing.T) {
+	// arrange
+	expectedResult := PasswordItem{Name: "example.com", Username: "adrian", SHA1: "00000099A4D3034E14DF60EF50799F695C27C0EC"}
+
+	// act
+	actualResults, err := Compare("../../test/hibp-dir", "../../test/wpm.json")
+
+	// assert
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(actualResults) != 1 {
+		t.Errorf("Expected 1 match, got %d", len(actualResults))
+	}
+	if expectedResult != actualResults[0] {
+		t.Errorf("Expected result '%v' did not match actual '%v'", expectedResult, actualResults)
+	}
+}
+
+func TestFindHashInRangeFile(t *testing.T) {
+	// arrange
+	content := "0005AD76BD555C1D6D771DE417A4B87E4B4:10\r\n099A4D3034E14DF60EF50799F695C27C0EC:8\r\n"
+	file, err := os.CreateTemp("", "range_file")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(file.Name())
+	file.WriteString(content)
+	file.Close()
+
+	tests := []struct {
+		name          string
+		suffix        string
+		expectFound   bool
+		expectedCount int64
+	}{
+		{
+			name:          "Found at start",
+			suffix:        "0005AD76BD555C1D6D771DE417A4B87E4B4",
+			expectFound:   true,
+			expectedCount: 10,
+		},
+		{
+			name:          "Found at end",
+			suffix:        "099A4D3034E14DF60EF50799F695C27C0EC",
+			expectFound:   true,
+			expectedCount: 8,
+		},
+		{
+			name:          "Not found",
+			suffix:        "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+			expectFound:   false,
+			expectedCount: 0,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			found, count, err := findHashInRangeFile(file.Name(), test.suffix)
+			if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+			if found != test.expectFound {
+				t.Errorf("Expected found=%v, got %v", test.expectFound, found)
+			}
+			if count != test.expectedCount {
+				t.Errorf("Expected count=%d, got %d", test.expectedCount, count)
+			}
+		})
+	}
+}
+
 func BenchmarkCompareFiles(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, err := CompareFiles("../../test/hibp.txt", "../../test/wpm.json")
