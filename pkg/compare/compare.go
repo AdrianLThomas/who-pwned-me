@@ -157,7 +157,7 @@ func findHash(start int64, end int64, file *os.File, hash string) (string, int64
 		}
 	}
 	reader := bufio.NewReader(file)
-	if start != end { // if the result happens to be the first line, then don't bother skipping to the next line.
+	if middle > 0 { // if we're not at the start of the file, we're likely mid-line, so skip to the next line.
 		// we're likely part way through a line, so read until we find a new line
 		_, err := reader.ReadBytes('\n')
 		if err != nil {
@@ -178,6 +178,9 @@ func findHash(start int64, end int64, file *os.File, hash string) (string, int64
 
 	if currentHash == hash {
 		return currentHash, numberOfInstances, nil
+	} else if middle == start || middle == end {
+		// exhausted the search without finding a match
+		return "", 0, nil
 	} else if hash < currentHash {
 		// 	seek backwards
 		return findHash(start, middle, file, hash)
