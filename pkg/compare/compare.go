@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -18,6 +20,81 @@ type PasswordItem struct {
 	Name     string `json:"name"`
 	Username string `json:"username"`
 	SHA1     string `json:"sha1"`
+}
+
+// Compare auto-detects whether hibpPath is a file or directory and delegates accordingly.
+func Compare(hibpPath string, wpmPath string) ([]PasswordItem, error) {
+	info, err := os.Stat(hibpPath)
+	if err != nil {
+		return nil, err
+	}
+	if info.IsDir() {
+		return compareWithDirectory(hibpPath, wpmPath)
+	}
+	return CompareFiles(hibpPath, wpmPath)
+}
+
+func compareWithDirectory(dirPath string, wpmPath string) ([]PasswordItem, error) {
+	wpmFile, err := os.Open(wpmPath)
+	if err != nil {
+		return nil, err
+	}
+	defer wpmFile.Close()
+
+	passwordItems, err := readPasswordItems(wpmFile)
+	if err != nil {
+		return nil, err
+	}
+
+	foundItems := make([]PasswordItem, 0)
+	for _, item := range passwordItems {
+		hash := strings.ToUpper(item.SHA1)
+		if len(hash) != 40 {
+			continue
+		}
+		prefix := hash[:5]
+		suffix := hash[5:]
+
+		rangeFilePath := filepath.Join(dirPath, prefix)
+		found, _, err := findHashInRangeFile(rangeFilePath, suffix)
+		if err != nil {
+			return nil, fmt.Errorf("error reading range file %s: %w", rangeFilePath, err)
+		}
+		if found {
+			foundItems = append(foundItems, item)
+		}
+	}
+
+	return foundItems, nil
+}
+
+func findHashInRangeFile(filePath string, hashSuffix string) (bool, int64, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return false, 0, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+		parts := strings.SplitN(line, ":", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		suffix := strings.ToUpper(parts[0])
+		if suffix == hashSuffix {
+			count, _ := strconv.ParseInt(strings.TrimSpace(parts[1]), 10, 64)
+			return true, count, nil
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return false, 0, err
+	}
+	return false, 0, nil
 }
 
 // Given a file to the HIBP database and the file with SHA1 passwords, return all matching items. If there's an error, it could be related to a problem with the source files or no match found
